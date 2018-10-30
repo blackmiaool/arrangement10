@@ -4,6 +4,7 @@ logs
 .DS_Store
 node_modules
 /dist
+.history
 
 # local env files
 .env.local
