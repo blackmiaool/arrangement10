@@ -102,6 +102,7 @@
         <el-button type="primary" @click="add">添加项目</el-button>
         <el-button type="success" @click="exportTable">导出</el-button>
         <el-button type="success" @click="save">保存</el-button>
+        <ExportDialog ref="exportDialog"/>
     </div>
 </template>
 
@@ -109,6 +110,7 @@
 import ColorSelector from "@/components/color-selector";
 import SortableTable from "@/components/sortable-table";
 import getStorage from "@/tools/get-storage";
+import ExportDialog from "@/components/export-dialog";
 
 const colors = [
     {
@@ -193,7 +195,6 @@ export default {
         });
 
         window.addEventListener("beforeunload", e => {
-            console.log("sdf", this.unsaved);
             if (this.unsaved) {
                 //useless
                 e.returnValue = "有未保存内容，是否退出？";
@@ -347,7 +348,9 @@ export default {
                 })
                 .catch(() => {});
         },
-        exportTable() {},
+        exportTable() {
+            this.$refs.exportDialog.show(this.tableData);
+        },
         add() {
             this.$prompt("", "项目名称", {
                 confirmButtonText: "确认",
@@ -435,7 +438,7 @@ export default {
             }
         }
     },
-    components: { ColorSelector, SortableTable }
+    components: { ColorSelector, SortableTable, ExportDialog }
 };
 </script>
 
