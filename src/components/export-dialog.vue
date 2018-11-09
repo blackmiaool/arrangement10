@@ -26,8 +26,8 @@ export default {
         };
     },
     methods: {
-        show(tableData) {
-            this.html = generateTable(tableData);
+        show(tableData,config) {
+            this.html = generateTable(tableData,config);
             this.dialogVisible = true;
         }
     }

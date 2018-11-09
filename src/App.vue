@@ -183,7 +183,26 @@ const { setter: setTableData, getter: getTableData } = getStorage(
     "arragement10-table",
     []
 );
-
+Date.prototype.format = function (format) {
+    const zeros = ["", "0", "00", "000", "0000"];
+    const c = {
+        "Y+": this.getFullYear(),
+        "M+": this.getMonth() + 1,
+        "d+": this.getDate(),
+        "h+": this.getHours(),
+        "m+": this.getMinutes(),
+        "s+": this.getSeconds(),
+        "q+": Math.floor((this.getMonth() + 3) / 3),
+        "S+": this.getMilliseconds(),
+    };
+    if (/(y+)/.test(format)) { format = format.replace(RegExp.$1, (`${this.getFullYear()}`).substr(4 - RegExp.$1.length)); }
+    for (const k in c) {
+        if (new RegExp(`(${k})`).test(format)) {
+            format = format.replace(RegExp.$1, (RegExp.$1.length === 1) ? (c[k]) : ((zeros[RegExp.$1.length] + c[k]).substr((`${c[k]}`).length)));
+        }
+    }
+    return format;
+};
 export default {
     name: "app",
     beforeMount() {
@@ -349,7 +368,10 @@ export default {
                 .catch(() => {});
         },
         exportTable() {
-            this.$refs.exportDialog.show(this.tableData);
+            this.$refs.exportDialog.show(this.tableData,{
+                skin:this.config.selectingColor,
+
+            });
         },
         add() {
             this.$prompt("", "项目名称", {
@@ -377,33 +399,6 @@ export default {
             };
         },
         objectSpanMethod({ rowIndex, columnIndex }) {
-            // if (columnIndex === 0) {
-            //     if (
-            //         rowIndex !== this.tableData.length - 1 &&
-            //         this.tableData[rowIndex + 1].project ===
-            //             this.tableData[rowIndex].project
-            //     ) {
-            //         return {
-            //             rowspan: 0,
-            //             colspan: 0
-            //         };
-            //     } else {
-            //         let cnt = 0;
-            //         for (let i = 0; i < this.tableData.length; i++) {
-            //             if (
-            //                 this.tableData[i].project ===
-            //                 this.tableData[rowIndex].project
-            //             ) {
-            //                 cnt++;
-            //             }
-            //         }
-            //         console.log("cnt", cnt, this.tableData[rowIndex].project,this.tableData);
-            //         return {
-            //             rowspan: -cnt,
-            //             colspan: 1
-            //         };
-            //     }
-            // }
             if (this.dragging) {
                 return {
                     rowspan: 1,

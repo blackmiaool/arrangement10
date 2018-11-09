@@ -1,32 +1,77 @@
-export default function generateTable(list) {
+export default function generateTable(list,config) {
+    function formatDate(time){
+        return (new Date(time)).format("MM/dd");
+    }
+    function objectSpanMethod(tableData,{ rowIndex, columnIndex }) {
+        if (columnIndex === 0) {
+            if (
+                rowIndex !== 0 &&
+                tableData[rowIndex - 1].project ===
+                    tableData[rowIndex].project
+            ) {
+                return {
+                    rowspan: 0,
+                    colspan: 0
+                };
+            } else {
+                let cnt = 0;
+                for (let i = rowIndex; i < tableData.length; i++) {
+                    if (
+                        tableData[i].project ===
+                        tableData[rowIndex].project
+                    ) {
+                        cnt++;
+                    }
+                }
+                return {
+                    rowspan: cnt,
+                    colspan: 1
+                };
+            }
+        }
+        return {rowspan:1,colspan:1};
+    }
+    const tdStyle=`padding:12px 10px;`;
+
     const tbody = list
-        .map((li) => {
+        .filter(li=>li.task)
+        .map((li,i) => {
+            const {rowspan,colspan}=objectSpanMethod(list,{
+                rowIndex:i,
+                columnIndex:0
+            });
             let tr = "<tr>";
-            tr += `<td>${li.project}</td>`;
-            tr += `<td>${li.task}</td>`;
-            tr += `<td>${li.precondition}</td>`;
-            tr += `<td>${li.dependency}</td>`;
-            tr += `<td>${li.labour||''}</td>`;
-            tr += `<td>${li.status}</td>`;
-            tr += `<td>${li.startTime}</td>`;
-            tr += `<td>${li.finishTime}</td>`;
-            tr += `<td>${li.actualFinishTime}</td>`;
-            tr += `<td>${li.comment}</td>`;           
+            if(rowspan||colspan){
+                tr += `<td style="${tdStyle}" rowspan="${rowspan}" colspan="${colspan}">${li.project}</td>`;
+            }            
+            tr += `<td style="${tdStyle}">${li.task}</td>`;
+            tr += `<td style="${tdStyle}">${li.precondition}</td>`;
+            tr += `<td style="${tdStyle}">${li.dependency}</td>`;
+            tr += `<td style="${tdStyle}">${li.labour||''}</td>`;
+            tr += `<td style="${tdStyle}">${li.status}</td>`;
+            tr += `<td style="${tdStyle}">${formatDate(li.startTime)}</td>`;
+            tr += `<td style="${tdStyle}">${formatDate(li.finishTime)}</td>`;
+            tr += `<td style="${tdStyle}">${formatDate(li.actualFinishTime)}</td>`;
+            tr += `<td style="${tdStyle}">${li.comment}</td>`;           
             return tr;
         })
         .join("");
-    return `<table style="width:1300px;">
-        <thead class="has-gutter">
-            <th style="width:150px;">项目名称</th>
-            <th style="min-width:200px">详细任务</th>
-            <th style="min-width:100px">前置条件</th>            
-            <th style="width:120px">前置责任人</th>
-            <th style="width:100px;">工时</th>
-            <th style="width:110px;">状态</th>
-            <th>计划开始时间</th>
-            <th>计划完成时间</th>
-            <th>实际完成时间</th>
-            <th style="width:300px">备注</th>
+    const thStyle=`background-color:${config.skin.bg_color} !important;`;
+    
+    return `<table style="width:1300px;" cellspacing="0" class="el-table--border el-table">
+        <thead>
+            <tr style="${`color:${config.skin.title_color};`}">
+            <th bgcolor="${config.skin.bg_color}" style="${tdStyle}width:150px;${thStyle}">项目名称</th>
+            <th bgcolor="${config.skin.bg_color}" style="${tdStyle}min-width:200px;${thStyle}">详细任务</th>
+            <th bgcolor="${config.skin.bg_color}" style="${tdStyle}min-width:100px;${thStyle}">前置条件</th>            
+            <th bgcolor="${config.skin.bg_color}" style="${tdStyle}width:120px;${thStyle}">前置责任人</th>
+            <th bgcolor="${config.skin.bg_color}" style="${tdStyle}width:100px;${thStyle}">工时</th>
+            <th bgcolor="${config.skin.bg_color}" style="${tdStyle}width:110px;${thStyle}">状态</th>
+            <th bgcolor="${config.skin.bg_color}" style="${tdStyle}${thStyle}">计划开始时间</th>
+            <th bgcolor="${config.skin.bg_color}" style="${tdStyle}${thStyle}">计划完成时间</th>
+            <th bgcolor="${config.skin.bg_color}" style="${tdStyle}${thStyle}">实际完成时间</th>
+            <th bgcolor="${config.skin.bg_color}" style="${tdStyle}width:300px;${thStyle}">备注</th>
+            </tr>
         </thead>
         <tbody>
             ${tbody}
