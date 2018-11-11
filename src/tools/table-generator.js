@@ -1,3 +1,5 @@
+const Url=require('url');
+
 export default function generateTable(list,config) {
     function formatDate(time){
         return (new Date(time)).format("MM/dd");
@@ -31,7 +33,7 @@ export default function generateTable(list,config) {
         }
         return {rowspan:1,colspan:1};
     }
-    const tdStyle=`padding:12px 10px;`;
+    const tdStyle=`padding:12px 10px;color:${config.skin.content_color};`;
 
     const tbody = list
         .filter(li=>li.task)
@@ -56,12 +58,23 @@ export default function generateTable(list,config) {
             return tr;
         })
         .join("");
-    const thStyle=`background-color:${config.skin.bg_color} !important;`;
+    const thStyle=`background-color:${config.skin.bg_color} !important;color:${config.skin.title_color};`;
+    const name=config.name.replace(/[<>&]/g,'');
+    const href=location.href+`${encodeURIComponent(JSON.stringify(list,config))}`;
+    function addParam(href,key,value){
     
-    return `<table style="width:1300px;" cellspacing="0" class="el-table--border el-table">
+        const url=Url.parse(href,true);
+        url.query[key]=value;
+        return url.format();
+    }
+    
+    return `<table style="width:1300px;border-color:${config.skin.border_color}" cellspacing="0" class="el-table--border el-table">
         <thead>
-            <tr style="${`color:${config.skin.title_color};`}">
-            <th bgcolor="${config.skin.bg_color}" style="${tdStyle}width:150px;${thStyle}">项目名称</th>
+            <tr style="">
+            <th bgcolor="${config.skin.bg_color}" style="${tdStyle}width:150px;${thStyle}">            
+                <a href="${href}" style="color:inherit;text-decoration:none;">项目名称</a>
+                <span style="opacity:0;font-size:0px;width:0;height:0;">${name}</span>
+            </th>
             <th bgcolor="${config.skin.bg_color}" style="${tdStyle}min-width:200px;${thStyle}">详细任务</th>
             <th bgcolor="${config.skin.bg_color}" style="${tdStyle}min-width:100px;${thStyle}">前置条件</th>            
             <th bgcolor="${config.skin.bg_color}" style="${tdStyle}width:120px;${thStyle}">前置责任人</th>

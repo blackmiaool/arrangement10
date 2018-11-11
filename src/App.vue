@@ -2,14 +2,23 @@
     <div id="app" @mouseup="dragging=false">
         <div>
             <el-form :inline="true" :model="config" class="demo-form-inline">
-                <el-form-item label="皮肤">
-                    <ColorSelector :colors="colors" v-model="config.selectingColor" />
-                </el-form-item>
-                <el-form-item label="中文名" :required="true">
-                    <el-input v-model="config.name"></el-input>
-                </el-form-item>
+                <div class="form-wrap">
 
-                <el-tag v-if="unsaved" type="danger" style="float:right;">未保存</el-tag>
+                    <el-form-item label="中文名" :required="true">
+                        <el-input v-model="config.name"></el-input>
+                    </el-form-item>
+                    <el-form-item label="皮肤">
+                        <ColorSelector :colors="colors" v-model="config.selectingColor" />
+                    </el-form-item>
+                    <el-select v-model="config.job" placeholder="选择角色" style="margin-right:10px;">
+                        <el-option key="developer" label="程序员" value="developer"></el-option>
+                        <el-option key="pm" label="产品经理" value="pm"></el-option>
+                    </el-select>
+                    <el-switch v-model="config.bossMode" active-text="Boss模式">
+                    </el-switch>
+                    <el-tag v-if="unsaved" type="danger" style="position:absolute;top:0;bottom:0;right:0;margin:auto;">未保存</el-tag>
+                </div>
+
             </el-form>
             <!-- <span>
                 小屏模式：
@@ -19,7 +28,7 @@
 
         </div>
         <SortableTable :dragging.sync="dragging" :checkDrag="checkDrag">
-            <el-table :data="tableData" :span-method="objectSpanMethod" border style="width: 100%;" :header-row-style="getHeaderStyle" @cell-click="onCellClick">
+            <el-table :data="tableData" :span-method="objectSpanMethod" border style="width: 100%;" :header-row-style="getHeaderStyle" @cell-click="onCellClick" :style="{borderColor:config.selectingColor.border_color,color:config.selectingColor.content_color}">
                 <el-table-column prop="project" label="项目名称" width="120">
                     <template slot-scope="scope">
                         <span @click="editProject(scope.row)">{{scope.row.project}}</span>
@@ -58,11 +67,7 @@
                 <el-table-column prop="status" label="状态" width="110">
                     <template slot-scope="scope">
                         <el-select v-model="scope.row.status" placeholder="状态选择">
-                            <el-option label="未开始" value="未开始">
-                            </el-option>
-                            <el-option label="进行中" value="进行中">
-                            </el-option>
-                            <el-option label="完成" value="完成">
+                            <el-option v-for="state in stateList[config.job]" :label="state" :key="state" :value="state">
                             </el-option>
                         </el-select>
                     </template>
@@ -90,6 +95,11 @@
                         <el-input v-model="scope.row.comment" type="textarea"></el-input>
                     </template>
                 </el-table-column>
+                <el-table-column prop="owner" label="负责人" min-width="200">
+                    <template slot-scope="scope">
+                        
+                    </template>
+                </el-table-column>
                 <el-table-column fixed="right" label="操作" width="120">
                     <template slot-scope="scope">
                         <el-button @click.native.prevent="deleteRow(scope.row,scope.$index)" size="small" type="danger">
@@ -100,9 +110,10 @@
             </el-table>
         </SortableTable>
         <el-button type="primary" @click="add">添加项目</el-button>
+        <el-button type="warning" @click="exportTable">导入</el-button>
         <el-button type="success" @click="exportTable">导出</el-button>
         <el-button type="success" @click="save">保存</el-button>
-        <ExportDialog ref="exportDialog"/>
+        <ExportDialog ref="exportDialog" />
     </div>
 </template>
 
@@ -116,37 +127,51 @@ const colors = [
     {
         title: "标准颜色",
         title_color: "#fff",
-        bg_color: "rgb(66,66,66)"
+        bg_color: "rgb(66,66,66)",
+        border_color: "#000",
+        content_color: "#000"
     },
     {
         title: "蓝色",
         title_color: "#fff",
-        bg_color: "#409eff"
+        bg_color: "#409eff",
+        border_color: "#ebeef5",
+        content_color: "#606266"
     },
     {
         title: "绿色",
         title_color: "#fff",
-        bg_color: "#67c23a"
+        bg_color: "#67c23a",
+        border_color: "#ebeef5",
+        content_color: "#606266"
     },
     {
         title: "橙色",
         title_color: "#fff",
-        bg_color: "#E6A23C"
+        bg_color: "#E6A23C",
+        border_color: "#ebeef5",
+        content_color: "#606266"
     },
     {
         title: "红色",
         title_color: "#fff",
-        bg_color: "#F56C6C"
+        bg_color: "#F56C6C",
+        border_color: "#ebeef5",
+        content_color: "#606266"
     },
     {
         title: "灰色",
         title_color: "#fff",
-        bg_color: "#909399"
+        bg_color: "#909399",
+        border_color: "#ebeef5",
+        content_color: "#606266"
     },
     {
         title: "PMO最爱",
         title_color: "#000",
-        bg_color: "rgb(146,208,80)"
+        bg_color: "rgb(146,208,80)",
+        border_color: "#000",
+        content_color: "#000"
     }
 ];
 function getNextMonday(time) {
@@ -175,7 +200,9 @@ const { setter: setConfig, getter: getConfig } = getStorage(
     {
         selectingColor: colors[0],
         smallScreen: false,
-        name: true
+        name: "",
+        bossMode: false,
+        job: "developer"
     }
 );
 
@@ -183,7 +210,7 @@ const { setter: setTableData, getter: getTableData } = getStorage(
     "arragement10-table",
     []
 );
-Date.prototype.format = function (format) {
+Date.prototype.format = function(format) {
     const zeros = ["", "0", "00", "000", "0000"];
     const c = {
         "Y+": this.getFullYear(),
@@ -193,12 +220,22 @@ Date.prototype.format = function (format) {
         "m+": this.getMinutes(),
         "s+": this.getSeconds(),
         "q+": Math.floor((this.getMonth() + 3) / 3),
-        "S+": this.getMilliseconds(),
+        "S+": this.getMilliseconds()
     };
-    if (/(y+)/.test(format)) { format = format.replace(RegExp.$1, (`${this.getFullYear()}`).substr(4 - RegExp.$1.length)); }
+    if (/(y+)/.test(format)) {
+        format = format.replace(
+            RegExp.$1,
+            `${this.getFullYear()}`.substr(4 - RegExp.$1.length)
+        );
+    }
     for (const k in c) {
         if (new RegExp(`(${k})`).test(format)) {
-            format = format.replace(RegExp.$1, (RegExp.$1.length === 1) ? (c[k]) : ((zeros[RegExp.$1.length] + c[k]).substr((`${c[k]}`).length)));
+            format = format.replace(
+                RegExp.$1,
+                RegExp.$1.length === 1
+                    ? c[k]
+                    : (zeros[RegExp.$1.length] + c[k]).substr(`${c[k]}`.length)
+            );
         }
     }
     return format;
@@ -226,6 +263,25 @@ export default {
             dragging: false,
             config: null,
             unsaved: false,
+            stateList: {
+                pm: [
+                    "需求规划",
+                    "需求分析",
+                    "UI设计",
+                    "需求待评审",
+                    "待排期",
+                    "待开发",
+                    "开发中",
+                    "待提测",
+                    "待测试",
+                    "测试中",
+                    "待验收",
+                    "待上线",
+                    "已上线",
+                    "暂停"
+                ],
+                developer: ["未开始", "进行中", "完成"]
+            },
             pickerOptions: {
                 shortcuts: [
                     {
@@ -368,9 +424,9 @@ export default {
                 .catch(() => {});
         },
         exportTable() {
-            this.$refs.exportDialog.show(this.tableData,{
-                skin:this.config.selectingColor,
-
+            this.$refs.exportDialog.show(this.tableData, {
+                skin: this.config.selectingColor,
+                name: this.config.name || ""
             });
         },
         add() {
@@ -437,18 +493,54 @@ export default {
 };
 </script>
 
-<style>
+<style lang="less">
 body {
     font-family: Helvetica Neue, Helvetica, Hiragino Sans GB, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-
+    margin: 0;
     color: #2c3e50;
+}
+#app {
+    padding: 0 10px;
 }
 .el-table th {
     background-color: inherit !important;
 }
 .sortable-dragging td:first-child:not([rowspan="1"]) {
     display: none;
+}
+.el-table.el-table--border {
+    .el-table__header-wrapper,
+    .el-table__body-wrapper,
+    .el-table__fixed-body-wrapper,
+    .el-table__fixed-right,
+    tbody,
+    table,
+    td,
+    tr,
+    th,
+    th.is-leaf {
+        border-color: inherit;
+        line-height: 1.3;
+    }
+    td {
+        div.cell {
+            text-overflow: unset;
+        }
+    }
+    input,
+    textarea {
+        color: inherit;
+    }
+}
+.form-wrap {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    position: relative;
+    .el-form-item {
+        margin: 0;
+    }
 }
 </style>

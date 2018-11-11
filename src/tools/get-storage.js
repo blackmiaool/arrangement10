@@ -6,7 +6,7 @@ export default function getStorage(storageKey, defaultValue) {
             value = localStorage.getItem(storageKey);
             value = JSON.parse(value);
             if (value) {
-                value = Object.assign(value);
+                value = Object.assign(defaultValue, value);
             }
             return value || defaultValue;
         } catch (error) {
