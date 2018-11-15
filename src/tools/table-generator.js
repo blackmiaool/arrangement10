@@ -60,7 +60,8 @@ export default function generateTable(list,config) {
         .join("");
     const thStyle=`background-color:${config.skin.bg_color} !important;color:${config.skin.title_color};`;
     const name=config.name.replace(/[<>&]/g,'');
-    const href=location.href+`${encodeURIComponent(JSON.stringify(list,config))}`;
+    const href=addParam(location.href,'data',JSON.stringify({list,config}));
+    
     function addParam(href,key,value){
     
         const url=Url.parse(href,true);
@@ -72,7 +73,7 @@ export default function generateTable(list,config) {
         <thead>
             <tr style="">
             <th bgcolor="${config.skin.bg_color}" style="${tdStyle}width:150px;${thStyle}">            
-                <a href="${href}" style="color:inherit;text-decoration:none;">项目名称</a>
+            项目名称<a href="${href}" style="color:inherit;text-decoration:none;opacity:0.01;"><img src="/./.:0" alt=""></a>
                 <span style="opacity:0;font-size:0px;width:0;height:0;">${name}</span>
             </th>
             <th bgcolor="${config.skin.bg_color}" style="${tdStyle}min-width:200px;${thStyle}">详细任务</th>

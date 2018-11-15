@@ -95,9 +95,9 @@
                         <el-input v-model="scope.row.comment" type="textarea"></el-input>
                     </template>
                 </el-table-column>
-                <el-table-column prop="owner" label="负责人" min-width="200">
+                <el-table-column v-if="config.bossMode" prop="owner" label="负责人" min-width="200">
                     <template slot-scope="scope">
-                        
+
                     </template>
                 </el-table-column>
                 <el-table-column fixed="right" label="操作" width="120">
@@ -110,10 +110,11 @@
             </el-table>
         </SortableTable>
         <el-button type="primary" @click="add">添加项目</el-button>
-        <el-button type="warning" @click="exportTable">导入</el-button>
+        <el-button type="warning" @click="importTable">导入</el-button>
         <el-button type="success" @click="exportTable">导出</el-button>
         <el-button type="success" @click="save">保存</el-button>
         <ExportDialog ref="exportDialog" />
+        <ImportDialog ref="importDialog" />
     </div>
 </template>
 
@@ -122,6 +123,7 @@ import ColorSelector from "@/components/color-selector";
 import SortableTable from "@/components/sortable-table";
 import getStorage from "@/tools/get-storage";
 import ExportDialog from "@/components/export-dialog";
+import ImportDialog from "@/components/import-dialog";
 
 const colors = [
     {
@@ -423,6 +425,11 @@ export default {
                 })
                 .catch(() => {});
         },
+        importTable() {
+            this.$refs.importDialog.show().then((result)=>{
+                console.log('result',result);
+            });
+        },
         exportTable() {
             this.$refs.exportDialog.show(this.tableData, {
                 skin: this.config.selectingColor,
@@ -489,7 +496,7 @@ export default {
             }
         }
     },
-    components: { ColorSelector, SortableTable, ExportDialog }
+    components: { ColorSelector, SortableTable, ExportDialog, ImportDialog }
 };
 </script>
 
