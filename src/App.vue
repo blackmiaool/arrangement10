@@ -27,7 +27,7 @@
             </span> -->
 
         </div>
-        <SortableTable :dragging.sync="dragging" :checkDrag="checkDrag">
+        <SortableTable :dragging.sync="dragging" :checkDrag="checkDrag" style="margin-bottom:10px;">
             <el-table empty-text="点击‘添加项目’按钮开始使用" :data="tableData" :span-method="objectSpanMethod" border style="width: 100%;" :header-row-style="getHeaderStyle" @cell-click="onCellClick" :style="{borderColor:config.selectingColor.border_color,color:config.selectingColor.content_color}">
                 <el-table-column prop="project" label="项目名称" width="120">
                     <template slot-scope="scope">
@@ -64,9 +64,12 @@
                         <el-input v-model="scope.row.labour" type="number"></el-input>
                     </template>
                 </el-table-column>
-                <el-table-column prop="status" label="状态" width="110">
+                <el-table-column prop="status" label="状态" width="150">
                     <template slot-scope="scope">
-                        <el-select v-model="scope.row.status" placeholder="状态选择">
+                        <span v-if="scope.row.status==='未开始'" class="status-icon">👤</span>
+                        <span v-if="scope.row.status==='进行中'" class="status-icon">👨🏼‍💻</span>
+                        <span v-if="scope.row.status==='完成'" class="status-icon">🙏</span>
+                        <el-select v-model="scope.row.status" placeholder="状态选择" style="width: 90px;">
                             <el-option v-for="state in stateList[config.job]" :label="state" :key="state" :value="state">
                             </el-option>
                         </el-select>
@@ -597,5 +600,9 @@ body {
     .el-form-item {
         margin: 0;
     }
+}
+.status-icon{
+    margin-right: 10px;
+    font-size:20px;
 }
 </style>
