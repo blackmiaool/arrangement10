@@ -1,6 +1,7 @@
 
 <template>
     <el-dialog title="导出" :visible.sync="dialogVisible" width="90%">
+        <div>点击内容 -> 全选 -> Ctrl+C</div>
         <div style="overflow:auto;">
             <div v-html="html" contenteditable="contenteditable">
 
@@ -8,8 +9,7 @@
         </div>
 
         <span slot="footer" class="dialog-footer">
-            <el-button @click="dialogVisible = false">Cancel</el-button>
-            <el-button type="primary" @click="dialogVisible = false">Confirm</el-button>
+            <el-button type="primary" @click="dialogVisible = false">确定</el-button>
         </span>
     </el-dialog>
 </template>

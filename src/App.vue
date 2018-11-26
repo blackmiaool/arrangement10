@@ -28,12 +28,12 @@
 
         </div>
         <SortableTable :dragging.sync="dragging" :checkDrag="checkDrag">
-            <el-table :data="tableData" :span-method="objectSpanMethod" border style="width: 100%;" :header-row-style="getHeaderStyle" @cell-click="onCellClick" :style="{borderColor:config.selectingColor.border_color,color:config.selectingColor.content_color}">
+            <el-table empty-text="点击‘添加项目’按钮开始使用" :data="tableData" :span-method="objectSpanMethod" border style="width: 100%;" :header-row-style="getHeaderStyle" @cell-click="onCellClick" :style="{borderColor:config.selectingColor.border_color,color:config.selectingColor.content_color}">
                 <el-table-column prop="project" label="项目名称" width="120">
                     <template slot-scope="scope">
                         <span @click="editProject(scope.row)">{{scope.row.project}}</span>
                         <div>
-                            <el-button @click.native.prevent="deleteRow(scope.row,scope.$index)" size="small" type="danger">
+                            <el-button @click.native.prevent.stop="deleteProject(scope.row,scope.$index)" size="small" type="danger">
                                 删除
                             </el-button>
                         </div>
@@ -96,9 +96,6 @@
                     </template>
                 </el-table-column>
                 <el-table-column v-if="config.bossMode" prop="owner" label="负责人" min-width="200">
-                    <template slot-scope="scope">
-
-                    </template>
                 </el-table-column>
                 <el-table-column fixed="right" label="操作" width="120">
                     <template slot-scope="scope">
@@ -114,7 +111,7 @@
         <el-button type="success" @click="exportTable">导出</el-button>
         <el-button type="success" @click="save">保存</el-button>
         <ExportDialog ref="exportDialog" />
-        <ImportDialog ref="importDialog" />
+        <ImportDialog ref="importDialog"/>
     </div>
 </template>
 
@@ -181,6 +178,9 @@ function getNextMonday(time) {
     const weekTime = Math.ceil((time + bias) / 24 / 36e5 / 7);
     return new Date((weekTime * 7 * 24 + 9) * 36e5 - bias);
 }
+function isEmptyTask(task){
+    return !task.task&&!task.precondition&&!task.labour&&!task.comment;
+}
 function getTask(assigned = {}) {
     const empty = {
         project: "",
@@ -192,7 +192,8 @@ function getTask(assigned = {}) {
         startTime: null,
         finishTime: null,
         actualFinishTime: null,
-        comment: ""
+        comment: "",
+        owner:''
     };
     return Object.assign(empty, assigned);
 }
@@ -345,7 +346,34 @@ export default {
                 if (this.ready) {
                     this.unsaved = true;
                 }
-
+                //merge projects
+                const shouldMerge=tableData.some((row,rowIndex)=>{
+                    // last row of a project
+                    const currentProj=row.project;
+                    if(tableData[rowIndex+1] && currentProj!==tableData[rowIndex+1].project){                        
+                        for(let followingIndex=rowIndex+1;followingIndex<tableData.length;followingIndex++){
+                            const followingProj=tableData[followingIndex].project;
+                            if(followingProj===currentProj){
+                                return true;
+                            }
+                        }
+                    }
+                });
+                if(shouldMerge){
+                    const newTable=[];
+                    tableData.forEach((li)=>{
+                        const insertIndex=newTable.findIndex((row,i)=>{
+                            return i===newTable.length-1||row.project!==newTable[i+1].project;
+                        });
+                        if(insertIndex===-1){
+                            newTable.push(li);
+                        }else{
+                            newTable.splice(insertIndex+1,0,li);
+                        }
+                    });
+                    this.tableData=newTable;
+                    tableData=newTable;
+                }
                 tableData.forEach((row, i) => {
                     if (!row.task) {
                         return;
@@ -353,7 +381,7 @@ export default {
                     //last row
                     if (i === tableData.length - 1) {
                         if (row.task) {
-                            tableData.push(getTask({ project: row.project }));
+                            tableData.push(getTask({ project: row.project,owner:this.config.name }));
                         }
                     } else {
                         if (
@@ -363,7 +391,7 @@ export default {
                             tableData.splice(
                                 i + 1,
                                 0,
-                                getTask({ project: row.project })
+                                getTask({ project: row.project,owner:this.config.name })
                             );
                         }
                     }
@@ -387,6 +415,21 @@ export default {
                 return false;
             }
             return true;
+        },
+        deleteProject(row){
+            this.$confirm("是否确定删除项目：" + row.project, "danger", {
+                confirmButtonText: "确定",
+                cancelButtonText: "取消",
+                type: "warning"
+            })
+                .then(() => {
+                    this.tableData=this.tableData.filter((li)=>{
+                        return li.project!==row.project;
+                    });
+                })
+                .catch(() => {
+                    //nothing
+                });
         },
         deleteRow(row, index) {
             this.$confirm("是否确定删除任务：" + row.task, "Warning", {
@@ -426,13 +469,17 @@ export default {
                 .catch(() => {});
         },
         importTable() {
-            this.$refs.importDialog.show().then((result)=>{
-                console.log('result',result);
+            this.$refs.importDialog.show().then(({list})=>{
+                this.tableData.push(...list);
+                this.tableData=this.tableData.filter((li)=>{
+                    return !isEmptyTask(li);
+                });
             });
         },
         exportTable() {
             this.$refs.exportDialog.show(this.tableData, {
                 skin: this.config.selectingColor,
+                bossMode:this.config.bossMode,
                 name: this.config.name || ""
             });
         },
@@ -449,7 +496,8 @@ export default {
                     }
                     this.tableData.push(
                         getTask({
-                            project: value
+                            project: value,
+                            owner:this.config.name
                         })
                     );
                 })

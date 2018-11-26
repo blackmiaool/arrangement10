@@ -1,13 +1,15 @@
 
 <template>
     <el-dialog title="导入" :visible.sync="dialogVisible" width="90%">
+        <div>复制别人的表格，粘贴到下方输入框</div>
         <div style="overflow:auto;">
             <div class="input-area" contenteditable="contenteditable" ref="input" @input="onInput">
 
             </div>
         </div>
-        <div>
-            负责人:<span>{{author}}</span>
+        <div v-if="author">
+            负责人:
+            <span>{{author}}</span>
         </div>
         <span slot="footer" class="dialog-footer">
             <el-button @click="dialogVisible = false">取消</el-button>
@@ -23,31 +25,49 @@ export default {
         return {
             dialogVisible: false,
             html: "",
-            author:'',
+            author: "",
+            data: null
         };
     },
     methods: {
-        onInput(e){
+        onInput() {
             let match;
             let param;
-            try{
-                match=this.$refs.input.innerHTML.match(/data=([\s\S]+?)"/);
-                param=JSON.parse(decodeURIComponent(match[1]));
-            }catch(e){
-                console.log(e); 
-                alert('无法解析导入的内容，请联系开发者');
+            try {
+                if(!this.$refs.input.innerHTML){
+                    return;
+                }
+                match = this.$refs.input.innerHTML.match(/data=([\s\S]+?)"/);
+                param = JSON.parse(decodeURIComponent(match[1]));
+            } catch (e) {
+                //eslint-disable-next-line no-console
+                console.log(e);
+                alert("无法解析导入的内容，请联系开发者");
             }
-            if(param){
-                this.author=param.config.name;
-            }                        
-            console.log(param);
+            if (param) {
+                this.author = param.config.name;
+                this.data = param;
+                
+            }
         },
-        importHtml(){
+        importHtml() {
             this.dialogVisible = false;
-            
+            if (this.listener) {
+                this.listener(this.data);
+            }
         },
         show() {
-            this.dialogVisible = true;
+            
+            return new Promise(resolve => {
+                this.dialogVisible = true;
+                setTimeout(()=>{
+                    this.$refs.input.innerHTML="";
+                    this.author=null;
+                });
+                this.listener = param => {
+                    resolve(param);
+                };
+            });
         }
     }
 };
