@@ -1,180 +1,91 @@
 <template>
-    <div id="app" @mouseup="dragging=false">
-        <div>
-            <el-form :inline="true" :model="config" class="demo-form-inline">
-                <div class="form-wrap">
-                    <el-form-item label="中文名" :required="true">
-                        <el-input v-model="config.name"></el-input>
-                    </el-form-item>
-                    <el-form-item label="皮肤">
-                        <ColorSelector :colors="colors" v-model="config.selectingColor" />
-                    </el-form-item>
-                    <el-select v-model="config.job" placeholder="选择角色" style="margin-right:10px;">
-                        <el-option key="developer" label="程序员" value="developer"></el-option>
-                        <el-option key="pm" label="产品经理" value="pm"></el-option>
-                    </el-select>
-                    <el-switch v-model="config.bossMode" active-text="Boss模式">
-                    </el-switch>
-                    <el-tag v-if="unsaved" type="danger" style="position:absolute;top:0;bottom:0;right:0;margin:auto;">未保存</el-tag>
-                </div>
-
-            </el-form>
-            <!-- <span>
-                小屏模式：
-                <el-switch v-model="config.smallScreen">
-                </el-switch>
-            </span> -->
-
-        </div>
-        <SortableTable :dragging.sync="dragging" :checkDrag="checkDrag" style="margin-bottom:10px;">
-            <el-table empty-text="点击‘添加项目’按钮开始使用" :data="tableData" :span-method="objectSpanMethod" border style="width: 100%;" :header-row-style="getHeaderStyle" @cell-click="onCellClick" :style="{borderColor:config.selectingColor.border_color,color:config.selectingColor.content_color}">
-                <el-table-column prop="project" label="项目名称" width="120">
-                    <template slot-scope="scope">
-                        <span @click="editProject(scope.row)">{{scope.row.project}}</span>
-                        <div>
-                            <el-button @click.native.prevent.stop="deleteProject(scope.row,scope.$index)" size="small" type="danger">
-                                删除
-                            </el-button>
-                        </div>
-                    </template>
-                </el-table-column>
-                <el-table-column width="50" align="center">
-                    <template slot-scope="scope">
-                        <i v-if="scope.row.task" class="el-icon-sort handle" style="font-size:20px;cursor:grab;cursor:-webkit-grab;"></i>
-                    </template>
-                </el-table-column>
-                <el-table-column prop="task" label="详细任务" min-width="200">
-                    <template slot-scope="scope">
-                        <el-input v-model="scope.row.task" type="textarea"></el-input>
-                    </template>
-                </el-table-column>
-                <el-table-column prop="precondition" label="前置条件" min-width="200">
-                    <template slot-scope="scope">
-                        <el-input v-model="scope.row.precondition" type="textarea"></el-input>
-                    </template>
-                </el-table-column>
-                <el-table-column prop="dependency" label="前置责任人" width="120">
-                    <template slot-scope="scope">
-                        <el-input v-model="scope.row.dependency"></el-input>
-                    </template>
-                </el-table-column>
-                <el-table-column prop="labour" label="工时（PD）" width="100">
-                    <template slot-scope="scope">
-                        <el-input v-model="scope.row.labour" type="number"></el-input>
-                    </template>
-                </el-table-column>
-                <el-table-column prop="status" label="状态" width="150">
-                    <template slot-scope="scope">
-                        <span v-if="scope.row.status==='未开始'" class="status-icon">👤</span>
-                        <span v-if="scope.row.status==='进行中'" class="status-icon">👨🏼‍💻</span>
-                        <span v-if="scope.row.status==='完成'" class="status-icon">🙏</span>
-                        <el-select v-model="scope.row.status" placeholder="状态选择" style="width: 90px;">
-                            <el-option v-for="state in stateList[config.job]" :label="state" :key="state" :value="state">
-                            </el-option>
-                        </el-select>
-                    </template>
-                </el-table-column>
-                <el-table-column prop="startTime" label="计划开始时间" width="121">
-                    <template slot-scope="scope">
-                        <el-date-picker v-model="scope.row.startTime" type="date" :picker-options="pickerOptions" style="width:100px;" format="MM-dd">
-                        </el-date-picker>
-                    </template>
-                </el-table-column>
-                <el-table-column prop="finishTime" label="计划完成时间" width="121">
-                    <template slot-scope="scope">
-                        <el-date-picker v-model="scope.row.finishTime" type="date" :picker-options="pickerOptions" style="width:100px;" format="MM-dd">
-                        </el-date-picker>
-                    </template>
-                </el-table-column>
-                <el-table-column prop="actualFinishTime" label="实际完成时间" width="121">
-                    <template slot-scope="scope">
-                        <el-date-picker v-model="scope.row.actualFinishTime" type="date" :picker-options="pickerOptions" style="width:100px;" format="MM-dd">
-                        </el-date-picker>
-                    </template>
-                </el-table-column>
-                <el-table-column prop="comment" label="备注" min-width="200">
-                    <template slot-scope="scope">
-                        <el-input v-model="scope.row.comment" type="textarea"></el-input>
-                    </template>
-                </el-table-column>
-                <el-table-column v-if="config.bossMode" prop="owner" label="负责人" min-width="200">
-                </el-table-column>
-                <el-table-column fixed="right" label="操作" width="120">
-                    <template slot-scope="scope">
-                        <el-button @click.native.prevent="deleteRow(scope.row,scope.$index)" size="small" type="danger">
+    <SortableTable :dragging.sync="dragging" :checkDrag="checkDrag" style="margin-bottom:10px;">
+        <el-table empty-text="点击‘添加项目’按钮开始使用" :data="tableData" :span-method="objectSpanMethod" border style="width: 100%;" :header-row-style="getHeaderStyle" @cell-click="onCellClick" :style="{borderColor:config.selectingColor.border_color,color:config.selectingColor.content_color}">
+            <el-table-column prop="project" label="项目名称" width="120">
+                <template slot-scope="scope">
+                    <span @click="editProject(scope.row)">{{scope.row.project}}</span>
+                    <div>
+                        <el-button @click.native.prevent.stop="deleteProject(scope.row,scope.$index)" size="small" type="danger">
                             删除
                         </el-button>
-                    </template>
-                </el-table-column>
-            </el-table>
-        </SortableTable>
-        <el-button type="primary" @click="add">添加项目</el-button>
-        <el-button type="warning" @click="importTable">导入</el-button>
-        <el-button type="success" @click="exportTable">导出</el-button>
-        <el-button type="success" @click="save">保存</el-button>
-        <ExportDialog ref="exportDialog" />
-        <ImportDialog ref="importDialog"/>
-    </div>
+                    </div>
+                </template>
+            </el-table-column>
+            <el-table-column width="50" align="center">
+                <template slot-scope="scope">
+                    <i v-if="scope.row.task" class="el-icon-sort handle" style="font-size:20px;cursor:grab;cursor:-webkit-grab;"></i>
+                </template>
+            </el-table-column>
+            <el-table-column prop="task" label="详细任务" min-width="200">
+                <template slot-scope="scope">
+                    <el-input v-model="scope.row.task" type="textarea"></el-input>
+                </template>
+            </el-table-column>
+            <el-table-column prop="precondition" label="前置条件" min-width="200">
+                <template slot-scope="scope">
+                    <el-input v-model="scope.row.precondition" type="textarea"></el-input>
+                </template>
+            </el-table-column>
+            <el-table-column prop="dependency" label="前置责任人" width="120">
+                <template slot-scope="scope">
+                    <el-input v-model="scope.row.dependency"></el-input>
+                </template>
+            </el-table-column>
+            <el-table-column prop="labour" label="工时（PD）" width="100">
+                <template slot-scope="scope">
+                    <el-input v-model="scope.row.labour" type="number"></el-input>
+                </template>
+            </el-table-column>
+            <el-table-column prop="status" label="状态" width="150">
+                <template slot-scope="scope">
+                    <span v-if="scope.row.status==='未开始'" class="status-icon">👤</span>
+                    <span v-if="scope.row.status==='进行中'" class="status-icon">👨🏼‍💻</span>
+                    <span v-if="scope.row.status==='完成'" class="status-icon">🙏</span>
+                    <el-select v-model="scope.row.status" placeholder="状态选择" style="width: 90px;">
+                        <el-option v-for="state in stateList[config.job]" :label="state" :key="state" :value="state">
+                        </el-option>
+                    </el-select>
+                </template>
+            </el-table-column>
+            <el-table-column prop="startTime" label="计划开始时间" width="121">
+                <template slot-scope="scope">
+                    <el-date-picker v-model="scope.row.startTime" type="date" :picker-options="pickerOptions" style="width:100px;" format="MM-dd">
+                    </el-date-picker>
+                </template>
+            </el-table-column>
+            <el-table-column prop="finishTime" label="计划完成时间" width="121">
+                <template slot-scope="scope">
+                    <el-date-picker v-model="scope.row.finishTime" type="date" :picker-options="pickerOptions" style="width:100px;" format="MM-dd">
+                    </el-date-picker>
+                </template>
+            </el-table-column>
+            <el-table-column prop="actualFinishTime" label="实际完成时间" width="121">
+                <template slot-scope="scope">
+                    <el-date-picker v-model="scope.row.actualFinishTime" type="date" :picker-options="pickerOptions" style="width:100px;" format="MM-dd">
+                    </el-date-picker>
+                </template>
+            </el-table-column>
+            <el-table-column prop="comment" label="备注" min-width="200">
+                <template slot-scope="scope">
+                    <el-input v-model="scope.row.comment" type="textarea"></el-input>
+                </template>
+            </el-table-column>
+            <el-table-column v-if="config.bossMode" prop="owner" label="负责人" min-width="200">
+            </el-table-column>
+            <el-table-column fixed="right" label="操作" width="120">
+                <template slot-scope="scope">
+                    <el-button @click.native.prevent="deleteRow(scope.row,scope.$index)" size="small" type="danger">
+                        删除
+                    </el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+    </SortableTable>
 </template>
 
 <script>
-import ColorSelector from "@/components/color-selector";
 import SortableTable from "@/components/sortable-table";
-import getStorage from "@/tools/get-storage";
-import ExportDialog from "@/components/export-dialog";
-import ImportDialog from "@/components/import-dialog";
 
-const colors = [
-    {
-        title: "标准颜色",
-        title_color: "#fff",
-        bg_color: "rgb(66,66,66)",
-        border_color: "#000",
-        content_color: "#000"
-    },
-    {
-        title: "蓝色",
-        title_color: "#fff",
-        bg_color: "#409eff",
-        border_color: "#ebeef5",
-        content_color: "#606266"
-    },
-    {
-        title: "绿色",
-        title_color: "#fff",
-        bg_color: "#67c23a",
-        border_color: "#ebeef5",
-        content_color: "#606266"
-    },
-    {
-        title: "橙色",
-        title_color: "#fff",
-        bg_color: "#E6A23C",
-        border_color: "#ebeef5",
-        content_color: "#606266"
-    },
-    {
-        title: "红色",
-        title_color: "#fff",
-        bg_color: "#F56C6C",
-        border_color: "#ebeef5",
-        content_color: "#606266"
-    },
-    {
-        title: "灰色",
-        title_color: "#fff",
-        bg_color: "#909399",
-        border_color: "#ebeef5",
-        content_color: "#606266"
-    },
-    {
-        title: "PMO最爱",
-        title_color: "#000",
-        bg_color: "rgb(146,208,80)",
-        border_color: "#000",
-        content_color: "#000"
-    }
-];
 function getNextMonday(time) {
     const bias = 8 * 36e5 + 3 * 24 * 36e5;
     const weekTime = Math.ceil((time + bias) / 24 / 36e5 / 7);
@@ -200,56 +111,9 @@ function getTask(assigned = {}) {
     return Object.assign(empty, assigned);
 }
 
-const { setter: setConfig, getter: getConfig } = getStorage(
-    "arragement10-config",
-    {
-        selectingColor: colors[0],
-        smallScreen: false,
-        name: "",
-        bossMode: false,
-        job: "developer"
-    }
-);
-
-const { setter: setTableData, getter: getTableData } = getStorage(
-    "arragement10-table",
-    []
-);
-Date.prototype.format = function(format) {
-    const zeros = ["", "0", "00", "000", "0000"];
-    const c = {
-        "Y+": this.getFullYear(),
-        "M+": this.getMonth() + 1,
-        "d+": this.getDate(),
-        "h+": this.getHours(),
-        "m+": this.getMinutes(),
-        "s+": this.getSeconds(),
-        "q+": Math.floor((this.getMonth() + 3) / 3),
-        "S+": this.getMilliseconds()
-    };
-    if (/(y+)/.test(format)) {
-        format = format.replace(
-            RegExp.$1,
-            `${this.getFullYear()}`.substr(4 - RegExp.$1.length)
-        );
-    }
-    for (const k in c) {
-        if (new RegExp(`(${k})`).test(format)) {
-            format = format.replace(
-                RegExp.$1,
-                RegExp.$1.length === 1
-                    ? c[k]
-                    : (zeros[RegExp.$1.length] + c[k]).substr(`${c[k]}`.length)
-            );
-        }
-    }
-    return format;
-};
 export default {
     name: "app",
     beforeMount() {
-        this.config = getConfig();
-        this.tableData = getTableData();
         setTimeout(() => {
             this.ready = true;
             this.unsaved = false;
@@ -330,17 +194,10 @@ export default {
                     }
                 ]
             },
-            colors,
             tableData: []
         };
     },
     watch: {
-        config: {
-            deep: true,
-            handler(config) {
-                setConfig(config);
-            }
-        },
         tableData: {
             deep: true,
             immediate: true,
@@ -403,10 +260,6 @@ export default {
     },
     computed: {},
     methods: {
-        save() {
-            this.unsaved = false;
-            setTableData(this.tableData);
-        },
         checkDrag(newIndex, oldIndex) {
             const newPositionData = this.tableData[newIndex];
             const oldPositionData = this.tableData[oldIndex];
@@ -546,7 +399,7 @@ export default {
             }
         }
     },
-    components: { ColorSelector, SortableTable, ExportDialog, ImportDialog }
+    components: { SortableTable }
 };
 </script>
 
